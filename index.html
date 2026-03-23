@@ -140,8 +140,8 @@
                 </div>
                 <div>
                     <label class="block text-gray-300 mb-2 tracking-wider text-sm">遊玩時間</label>
-                    <input id="input-time" type="datetime-local"
-                        class="w-full bg-black bg-opacity-50 border border-red-900 focus:border-red-500 rounded px-4 py-3 text-gray-300 outline-none transition-colors"
+                    <input id="input-time" type="text" placeholder="例如：2026/03/23 下午..."
+                        class="w-full bg-black bg-opacity-50 border border-red-900 focus:border-red-500 rounded px-4 py-3 text-gray-100 placeholder-gray-600 outline-none transition-colors"
                     />
                 </div>
             </div>
@@ -356,8 +356,8 @@
 
             // 預填目前時間
             const now = new Date();
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            document.getElementById('input-time').value = now.toISOString().slice(0, 16);
+            const timeStr = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+            document.getElementById('input-time').value = timeStr;
 
             startScreen.classList.remove('fade-in');
             startScreen.classList.add('fade-out');
@@ -381,9 +381,7 @@
             }
             errMsg.classList.add('hidden');
             playerName = nameVal;
-            // 格式化為易讀時間 e.g. 2026/03/23 17:20
-            const dt = new Date(timeVal);
-            playTime = `${dt.getFullYear()}/${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+            playTime = timeVal;
 
             const registerScreen = document.getElementById('screen-register');
             const quizScreen = document.getElementById('screen-quiz');
