@@ -184,9 +184,14 @@
                 <div id="rank-container"></div>
             </div>
 
-            <button onclick="resetQuiz()" class="px-8 py-3 bg-transparent border border-red-600 text-red-500 hover:bg-red-900 hover:text-white rounded tracking-widest transition-all duration-300">
-                再次輪迴
-            </button>
+            <div class="flex flex-col md:flex-row gap-4 justify-center">
+                <button onclick="openGoogleForm()" class="px-8 py-3 bg-red-900 hover:bg-red-800 text-white border border-red-500 rounded tracking-widest transition-all duration-300 shadow-[0_0_15px_rgba(220,38,38,0.5)]">
+                    登錄結果至檔案庫
+                </button>
+                <button onclick="resetQuiz()" class="px-8 py-3 bg-transparent border border-red-600 text-red-500 hover:bg-red-900 hover:text-white rounded tracking-widest transition-all duration-300">
+                    再次輪迴
+                </button>
+            </div>
         </div>
 
     </main>
@@ -500,16 +505,19 @@
                 });
             }, 300);
 
-            // 靜默提交結果到 Google 表單
-            submitToGoogleForm(ranked);
+            // 準備手動送出的 Google 表單預填網址
+            prepareGoogleFormUrl(ranked);
         }
 
-        // Google 表單靜默提交（使用隱藏 iframe，確保 100% 不會被瀏覽器 CORS 阻擋）
-        function submitToGoogleForm(ranked) {
-            const FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSckfabofhQ3hNnO47itNt96P0sepyq77g95sWELbIy1Q957QQ/formResponse';
+        let currentFormUrl = '';
+
+        // 準備手動送出的 Google 表單預填網址
+        function prepareGoogleFormUrl(ranked) {
+            const FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSckfabofhQ3hNnO47itNt96P0sepyq77g95sWELbIy1Q957QQ/viewform';
             const genderLabel = userGender === 'female' ? '女角色' : '男角色';
 
-            const data = {
+            const params = new URLSearchParams({
+                'usp': 'pp_url',
                 'entry.1594712998': playerName,
                 'entry.732220716': playTime,
                 'entry.237219137': genderLabel,
@@ -519,35 +527,16 @@
                 'entry.1831143891': ranked[1].score,
                 'entry.95458321': characters[ranked[2].key].name,
                 'entry.1649041233': ranked[2].score,
-            };
+            });
 
-            const iframeName = 'hidden_iframe_' + Date.now();
-            let iframe = document.createElement('iframe');
-            iframe.name = iframeName;
-            iframe.style.display = 'none';
-            document.body.appendChild(iframe);
+            currentFormUrl = `${FORM_URL}?${params.toString()}`;
+        }
 
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = FORM_URL;
-            form.target = iframeName;
-
-            for (const key in data) {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = key;
-                input.value = data[key];
-                form.appendChild(input);
+        // 開啟 Google 表單
+        function openGoogleForm() {
+            if (currentFormUrl) {
+                window.open(currentFormUrl, '_blank');
             }
-
-            document.body.appendChild(form);
-            form.submit();
-
-            // 提交後清理 DOM
-            setTimeout(() => {
-                document.body.removeChild(form);
-                document.body.removeChild(iframe);
-            }, 2000);
         }
 
         // 重置測驗
@@ -556,6 +545,7 @@
             userGender = '';
             playerName = '';
             playTime = '';
+            currentFormUrl = '';
             scores = {
                 ji_jiayin: 0, liu_yao: 0, song_shiyi: 0,
                 jiang_fangye: 0, ji_yinluo: 0, chong_yi: 0
