@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>《焚心》專屬角色心理測驗</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;700&display=swap');
+
+        body {
+            font-family: 'Noto Serif TC', serif;
+            background: radial-gradient(circle at center, #3a0a0a 0%, #0a0202 100%);
+            color: #f3e8d6;
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 營造古風落花/灰燼效果 */
+        .ash {
+            position: fixed;
+            background: #ff4a4a;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            animation: float 8s linear infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
+        }
+
+        .glass-panel {
+            background: rgba(20, 5, 5, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 74, 74, 0.3);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(255, 0, 0, 0.1);
+        }
+
+        .fade-in { animation: fadeIn 0.8s ease-in forwards; }
+        .fade-out { animation: fadeOut 0.5s ease-out forwards; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-10px); }
+        }
+
+        .option-btn {
+            transition: all 0.3s ease;
+            border: 1px solid #5a1a1a;
+            background: linear-gradient(90deg, transparent, rgba(90, 26, 26, 0.2), transparent);
+        }
+        
+        .option-btn:hover {
+            border-color: #ff4a4a;
+            background: rgba(255, 74, 74, 0.15);
+            box-shadow: 0 0 10px rgba(255, 74, 74, 0.3);
+            transform: translateX(5px);
+        }
+
+        .title-glow {
+            text-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+        }
+
+        .rank-bar-bg {
+            background: rgba(90,26,26,0.3);
+            border-radius: 4px;
+            height: 8px;
+            overflow: hidden;
+        }
+        .rank-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            width: 0;
+            transition: width 1s ease;
+        }
+        .rank-item {
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+        }
+        .rank-1 { border: 1px solid rgba(255,107,107,0.6); background: rgba(192,57,43,0.2); }
+        .rank-1 .rank-bar-fill { background: linear-gradient(90deg,#c0392b,#ff6b6b); }
+        .rank-2 { border: 1px solid rgba(90,26,26,0.5); background: rgba(90,26,26,0.12); }
+        .rank-2 .rank-bar-fill { background: linear-gradient(90deg,#5a1a1a,#c0392b); }
+        .rank-3 { border: 1px solid rgba(42,10,10,0.5); background: rgba(42,10,10,0.1); }
+        .rank-3 .rank-bar-fill { background: linear-gradient(90deg,#2a0a0a,#5a1a1a); }
+    </style>
+</head>
+<body class="relative">
+
+    <!-- 動態背景灰燼 -->
+    <div id="ashes-container"></div>
+
+    <!-- 音樂控制器 -->
+    <button id="bgm-toggle" class="fixed top-4 right-4 z-50 w-12 h-12 rounded-full glass-panel flex items-center justify-center text-red-400 hover:text-red-200 transition-colors">
+        <i class="fas fa-music"></i>
+    </button>
+    <!-- 使用上傳的音樂檔案作為 BGM -->
+    <audio id="bgm" loop preload="auto">
+        <source src="妖.mp3" type="audio/mpeg">
+    </audio>
+
+    <main class="flex-grow flex items-center justify-center p-4 z-10">
+        
+        <!-- 歡迎畫面 -->
+        <div id="screen-start" class="w-full max-w-2xl glass-panel rounded-lg p-8 md:p-12 text-center fade-in">
+            <h1 class="text-5xl md:text-7xl font-bold text-red-600 mb-8 title-glow tracking-widest">焚 心</h1>
+            <p class="text-gray-300 leading-relaxed mb-8 md:text-lg">
+                「究竟要焚盡多少真心，才明白最深的執念，本身就是劫火。」<br><br>
+                在雲山竹海之中，隱藏著逆天改命的鑄魂術。<br>
+                輪迴之下，你是深陷情劫的癡人，還是手握屠刀的復仇者？<br>
+                回答以下問題，喚醒你靈魂深處的歸屬。
+            </p>
+            <button onclick="startQuiz()" class="px-8 py-3 bg-red-900 hover:bg-red-800 text-white border border-red-500 rounded tracking-widest transition-all duration-300 shadow-[0_0_15px_rgba(220,38,38,0.5)]">
+                入局測驗
+            </button>
+        </div>
+
+        <!-- 登錄畫面（姓名 + 遊玩時間） -->
+        <div id="screen-register" class="w-full max-w-2xl glass-panel rounded-lg p-8 md:p-12 text-center hidden">
+            <p class="text-red-400 tracking-[0.15em] text-sm mb-6">── 踏入局前，留下你的名姓 ──</p>
+            <div class="flex flex-col gap-6 text-left">
+                <div>
+                    <label class="block text-gray-300 mb-2 tracking-wider text-sm">玩家姓名</label>
+                    <input id="input-name" type="text" maxlength="20" placeholder="請輸入你的名字…"
+                        class="w-full bg-black bg-opacity-50 border border-red-900 focus:border-red-500 rounded px-4 py-3 text-gray-100 placeholder-gray-600 outline-none transition-colors"
+                    />
+                </div>
+                <div>
+                    <label class="block text-gray-300 mb-2 tracking-wider text-sm">遊玩時間</label>
+                    <input id="input-time" type="datetime-local"
+                        class="w-full bg-black bg-opacity-50 border border-red-900 focus:border-red-500 rounded px-4 py-3 text-gray-300 outline-none transition-colors"
+                    />
+                </div>
+            </div>
+            <p id="register-error" class="text-red-400 text-sm mt-4 hidden">請填寫姓名與遊玩時間後再繼續。</p>
+            <button onclick="submitRegister()" class="mt-8 px-8 py-3 bg-red-900 hover:bg-red-800 text-white border border-red-500 rounded tracking-widest transition-all duration-300 shadow-[0_0_15px_rgba(220,38,38,0.5)]">
+                確認入局
+            </button>
+        </div>
+
+        <!-- 測驗畫面 -->
+        <div id="screen-quiz" class="w-full max-w-2xl glass-panel rounded-lg p-8 md:p-12 hidden">
+            <div class="mb-8 flex justify-between items-center text-red-400 text-sm">
+                <span id="question-counter">問題 1 / 8</span>
+                <div class="h-1 w-32 bg-gray-800 rounded">
+                    <div id="progress-bar" class="h-full bg-red-600 rounded transition-all duration-500" style="width: 12.5%;"></div>
+                </div>
+            </div>
+            <h2 id="question-text" class="text-2xl md:text-3xl font-bold mb-8 leading-tight text-red-100"></h2>
+            <div id="options-container" class="flex flex-col gap-4">
+                <!-- 選項會透過 JS 動態產生 -->
+            </div>
+        </div>
+
+        <!-- 結果畫面 -->
+        <div id="screen-result" class="w-full max-w-3xl glass-panel rounded-lg p-8 md:p-12 hidden text-center">
+            <p class="text-red-400 tracking-[0.2em] mb-2">你的命定角色是</p>
+            <h1 id="char-name" class="text-5xl md:text-6xl font-bold text-red-600 mb-4 title-glow tracking-widest"></h1>
+            <h3 id="char-title" class="text-xl text-gray-300 mb-8 italic"></h3>
+            
+            <div class="text-left bg-black bg-opacity-40 p-6 rounded border border-red-900 mb-8">
+                <p id="char-desc" class="text-gray-200 leading-relaxed md:text-lg"></p>
+                <div class="mt-4 pt-4 border-t border-red-900">
+                    <p id="char-tags" class="text-sm text-red-400"></p>
+                </div>
+            </div>
+
+            <!-- 三魂歸位排名 -->
+            <div class="text-left mb-8">
+                <p class="text-red-400 tracking-[0.15em] text-sm mb-4 text-center">── 三魂歸位・靈力排行 ──</p>
+                <div id="rank-container"></div>
+            </div>
+
+            <button onclick="resetQuiz()" class="px-8 py-3 bg-transparent border border-red-600 text-red-500 hover:bg-red-900 hover:text-white rounded tracking-widest transition-all duration-300">
+                再次輪迴
+            </button>
+        </div>
+
+    </main>
+
+    <script>
+        // 角色資料庫與計分系統
+        const characters = {
+            'ji_jiayin': {
+                name: '紀嘉音',
+                title: '「靈族最受寵愛的小公主」',
+                desc: '你擁有極端的佔有慾與不為人知的陰暗面。你渴望成為所有人眼中的「第一順位」，如果愛不能純粹且唯一，你寧願毀掉它。你適合喜歡強勢輸出、能駕馭「黑蓮花」人設、享受極致修羅場與瘋批劇情的玩家。',
+                tags: '關鍵字：團寵位 / 腹黑病嬌 / 哥哥線重 / 強輸出'
+            },
+            'liu_yao': {
+                name: '流瑤',
+                title: '「氏神族最後的血脈」',
+                desc: '你的外表堅韌如竹，內心卻柔軟似水。你願意為了深愛的人承受極大的委屈與天罰。適合喜歡沉浸在深厚愛戀中（戀陪位）、能承受背叛與虐心劇情、偏好被動引導與NPC展開極致拉扯的玩家。',
+                tags: '關鍵字：戀陪位 / 純愛拉扯 / 虐心委屈 / 姐妹線'
+            },
+            'song_shiyi': {
+                name: '宋時頤',
+                title: '「靈族最年輕的女將軍」',
+                desc: '你是戰場上的孤狼，背負著沉重的家國與身世之謎。但你剛硬的外表下，其實也渴望著一份專屬的溫柔。適合喜歡被默默守護（戀陪位）、同時又能扛起大義、在該吵架時能果斷拔槍輸出的玩家。',
+                tags: '關鍵字：家國大義 / 戀陪被寵愛 / 戰鬥輸出 / 身世反轉'
+            },
+            'jiang_fangye': {
+                name: '江方野',
+                title: '「修羅族復仇少主」',
+                desc: '你生於血與火之中，活著的唯一意義就是復仇。你冷靜、理智，甚至能將愛情視為復仇的籌碼。適合抗壓能力極強、喜歡大開大合的輸出辯論、能獨立沉浸於家族大義與沉重仇恨的硬核玩家。',
+                tags: '關鍵字：極致復仇 / 大輸出位 / 相互利用 / 抗壓'
+            },
+            'ji_yinluo': {
+                name: '紀隱落',
+                title: '「冷血與柔情並存的靈族帝王」',
+                desc: '你是天生的帝王，為了保護心中最在乎的親人（妹妹），你可以毫不猶豫地屠戮天下、利用身邊所有人。適合能駕馭極端陰暗面、喜歡重度「兄妹情」、且享受操控與算計他人（戀陪利用）的高階玩家。',
+                tags: '關鍵字：陰暗帝王 / 妹控極限 / 戀陪利用 / 高操作要求'
+            },
+            'chong_yi': {
+                name: '重一',
+                title: '「為愛碎神格的掃地僧」',
+                desc: '你本該無情無欲，卻在紅塵中惹上了生生世世的羈絆。你願意為了心愛之人放棄神位，墜入輪迴。適合喜歡極致純愛、性格沉穩能隱忍、且偏好安靜沉浸體驗的玩家。',
+                tags: '關鍵字：純愛戰神 / 戀陪位 / 隱忍沉浸 / 蒼生與愛'
+            }
+        };
+
+        // 題目庫
+        const questions = [
+            {
+                text: "請問閣下想體驗哪種性別的角色？",
+                options: [
+                    { text: "男角色", type: 'gender', val: 'male' },
+                    { text: "女角色", type: 'gender', val: 'female' }
+                ]
+            },
+            {
+                text: "在劇本殺的圓桌上，你偏好哪種遊玩風格？",
+                options: [
+                    { text: "舌戰群儒！我是全場最強的輸出機，絕不服輸。", scores: { ji_jiayin: 2, ji_yinluo: 2, jiang_fangye: 2, song_shiyi: 1 } },
+                    { text: "默默沉浸體驗，感受角色內心的波瀾與無奈。", scores: { chong_yi: 2, liu_yao: 2 } },
+                    { text: "喜歡和NPC有甜蜜互動，最好有人能一直偏愛我、罩著我。", scores: { liu_yao: 1, song_shiyi: 2, ji_jiayin: 1 } }
+                ]
+            },
+            {
+                text: "如果你擁有「鏡花水月」重來一次的機會，你的執念會是什麼？",
+                options: [
+                    { text: "復仇！讓那些背叛我、屠我族人的人付出血的代價。", scores: { jiang_fangye: 3, ji_jiayin: 1 } },
+                    { text: "守護我最在乎的親人，哪怕為此滿手鮮血、背負罵名。", scores: { ji_yinluo: 3 } },
+                    { text: "尋回那個我深愛卻錯過的人，生生世世與之相守。", scores: { liu_yao: 2, chong_yi: 2, song_shiyi: 1 } },
+                    { text: "我要身邊所有人，都把我放在第一順位，非我不可！", scores: { ji_jiayin: 3 } }
+                ]
+            },
+            {
+                text: "你能接受自己的角色擁有「陰暗面」或做出道德瑕疵的行為嗎？",
+                options: [
+                    { text: "完全可以！我就喜歡病嬌、腹黑、瘋批的帶感人設。", scores: { ji_yinluo: 2, ji_jiayin: 2 } },
+                    { text: "為了家國大義或復仇，我可以不擇手段、互相利用。", scores: { jiang_fangye: 2 } },
+                    { text: "我可以承受委屈與被欺騙，但我的底線不容踐踏，逼急了我會反擊。", scores: { song_shiyi: 2, liu_yao: 1 } },
+                    { text: "不太行，我偏好偉光正，或者為了愛人默默犧牲的純愛戰神。", scores: { chong_yi: 2, liu_yao: 2 } }
+                ]
+            },
+            {
+                text: "面對劇中的「愛情」，你的態度是？",
+                options: [
+                    { text: "愛情是互相利用的籌碼，或者根本不重要，我有更在乎的事。", scores: { jiang_fangye: 2, ji_yinluo: 2 } },
+                    { text: "明知會痛，仍願為所愛之人墜入輪迴、對抗天規。", scores: { chong_yi: 2, liu_yao: 2 } },
+                    { text: "我需要被偏愛。如果這份愛不是百分之百屬於我，那我寧可毀掉它。", scores: { ji_jiayin: 2 } },
+                    { text: "外表冷漠拒絕，其實內心渴望被溫暖，一旦認定就不放手。", scores: { song_shiyi: 2 } }
+                ]
+            },
+            {
+                text: "當你發現一直信任的摯友，其實是為了某種目的在利用你時，你會？",
+                options: [
+                    { text: "痛苦掙扎，但念在舊情或許最終還是會心軟。我總是太容易相信別人。", scores: { liu_yao: 2, chong_yi: 1 } },
+                    { text: "毫不猶豫拔刀相向！欺騙我的人，必須血債血償。", scores: { jiang_fangye: 2, song_shiyi: 2 } },
+                    { text: "可笑，從來只有我利用別人，沒有人能算計我！", scores: { ji_yinluo: 2, ji_jiayin: 2 } }
+                ]
+            },
+            {
+                text: "若要拯救你最在乎的人，必須犧牲無辜者的性命，你會怎麼選？",
+                options: [
+                    { text: "寧可負天下人，也絕不讓我在乎的人受一點傷！", scores: { ji_yinluo: 3, ji_jiayin: 2 } },
+                    { text: "我做不到濫殺無辜，寧可自己背負痛苦或犧牲自己來換取生機。", scores: { chong_yi: 2, liu_yao: 2 } },
+                    { text: "如果所謂的無辜者是敵對陣營的，那我會毫不猶豫下手。", scores: { jiang_fangye: 2, song_shiyi: 2 } }
+                ]
+            },
+            {
+                text: "你希望你的故事最終迎來什麼樣的結局？",
+                options: [
+                    { text: "哪怕萬劫不復，也要讓所有對不起我的人付出慘痛代價！", scores: { jiang_fangye: 2, ji_jiayin: 2 } },
+                    { text: "為了大義或愛人戰死，留下永恆的傳說與遺憾。", scores: { song_shiyi: 2 } },
+                    { text: "與相愛之人攜手，哪怕必須放棄無上的權力與神位。", scores: { chong_yi: 2, liu_yao: 2 } },
+                    { text: "只要我守護的人能安好，我即使魂飛魄散也此生無憾。", scores: { ji_yinluo: 3 } }
+                ]
+            }
+        ];
+
+        let currentQuestion = 0;
+        let userGender = '';
+        let playerName = '';
+        let playTime = '';
+        let scores = {
+            ji_jiayin: 0, liu_yao: 0, song_shiyi: 0,
+            jiang_fangye: 0, ji_yinluo: 0, chong_yi: 0
+        };
+
+        // 音樂控制
+        const bgm = document.getElementById('bgm');
+        const bgmToggle = document.getElementById('bgm-toggle');
+        let isPlaying = false;
+
+        bgmToggle.addEventListener('click', () => {
+            // 如果音樂找不到，提示使用者
+            if (bgm.error || bgm.readyState === 0) {
+                alert("找不到 '妖.mp3' 檔案。\n\n請先將程式碼下載為 HTML 檔案，並與 '妖.mp3' 放在同一個電腦資料夾中開啟即可播放。");
+            }
+
+            if (isPlaying) {
+                bgm.pause();
+                bgmToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                bgmToggle.classList.replace('text-red-400', 'text-gray-500');
+            } else {
+                bgm.play().then(() => {
+                    bgmToggle.innerHTML = '<i class="fas fa-music"></i>';
+                    bgmToggle.classList.replace('text-gray-500', 'text-red-400');
+                }).catch(e => {
+                    console.log("Audio play failed:", e);
+                });
+            }
+            isPlaying = !isPlaying;
+        });
+
+        // 啟動測驗 → 先進入登錄畫面
+        function startQuiz() {
+            // 嘗試播放音樂
+            if(!isPlaying) {
+                bgm.volume = 0.5;
+                bgm.play().then(() => {
+                    isPlaying = true;
+                    bgmToggle.innerHTML = '<i class="fas fa-music"></i>';
+                }).catch(e => {
+                    console.log("Auto-play blocked or file not found.");
+                });
+            }
+
+            const startScreen = document.getElementById('screen-start');
+            const registerScreen = document.getElementById('screen-register');
+
+            // 預填目前時間
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('input-time').value = now.toISOString().slice(0, 16);
+
+            startScreen.classList.remove('fade-in');
+            startScreen.classList.add('fade-out');
+            setTimeout(() => {
+                startScreen.classList.add('hidden');
+                registerScreen.classList.remove('hidden');
+                registerScreen.classList.add('fade-in');
+                document.getElementById('input-name').focus();
+            }, 500);
+        }
+
+        // 確認登錄 → 進入測驗
+        function submitRegister() {
+            const nameVal = document.getElementById('input-name').value.trim();
+            const timeVal = document.getElementById('input-time').value;
+            const errMsg = document.getElementById('register-error');
+
+            if (!nameVal || !timeVal) {
+                errMsg.classList.remove('hidden');
+                return;
+            }
+            errMsg.classList.add('hidden');
+            playerName = nameVal;
+            // 格式化為易讀時間 e.g. 2026/03/23 17:20
+            const dt = new Date(timeVal);
+            playTime = `${dt.getFullYear()}/${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+
+            const registerScreen = document.getElementById('screen-register');
+            const quizScreen = document.getElementById('screen-quiz');
+            registerScreen.classList.remove('fade-in');
+            registerScreen.classList.add('fade-out');
+            setTimeout(() => {
+                registerScreen.classList.add('hidden');
+                quizScreen.classList.remove('hidden');
+                quizScreen.classList.add('fade-in');
+                showQuestion();
+            }, 500);
+        }
+
+        // 顯示問題
+        function showQuestion() {
+            const q = questions[currentQuestion];
+            document.getElementById('question-text').innerText = q.text;
+            document.getElementById('question-counter').innerText = `命途 ${currentQuestion + 1} / ${questions.length}`;
+            document.getElementById('progress-bar').style.width = `${((currentQuestion + 1) / questions.length) * 100}%`;
+            
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn w-full text-left p-4 rounded text-gray-200 md:text-lg';
+                btn.innerText = opt.text;
+                btn.onclick = () => selectOption(opt);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        // 選擇選項
+        function selectOption(opt) {
+            // 處理性別
+            if (opt.type === 'gender') {
+                userGender = opt.val;
+            } 
+            // 處理計分
+            else if (opt.scores) {
+                for (let char in opt.scores) {
+                    scores[char] += opt.scores[char];
+                }
+            }
+
+            currentQuestion++;
+
+            if (currentQuestion < questions.length) {
+                const quizScreen = document.getElementById('screen-quiz');
+                quizScreen.classList.remove('fade-in');
+                quizScreen.offsetWidth; // trigger reflow
+                quizScreen.classList.add('fade-in');
+                showQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        // 顯示結果
+        function showResult() {
+            const quizScreen = document.getElementById('screen-quiz');
+            const resultScreen = document.getElementById('screen-result');
+            
+            quizScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+            resultScreen.classList.add('fade-in');
+
+            // 根據性別篩選並排序
+            const validChars = userGender === 'female' 
+                ? ['ji_jiayin', 'liu_yao', 'song_shiyi'] 
+                : ['jiang_fangye', 'ji_yinluo', 'chong_yi'];
+
+            // 排序：分數由高到低
+            const ranked = validChars
+                .map(char => ({ key: char, score: scores[char] }))
+                .sort((a, b) => b.score - a.score);
+
+            const finalChar = ranked[0].key;
+            const maxScore = ranked[0].score || 1; // 避免除以0
+
+            const charData = characters[finalChar];
+            document.getElementById('char-name').innerText = charData.name;
+            document.getElementById('char-title').innerText = charData.title;
+            document.getElementById('char-desc').innerText = charData.desc;
+            document.getElementById('char-tags').innerText = charData.tags;
+
+            // 渲染排名區塊
+            const rankContainer = document.getElementById('rank-container');
+            rankContainer.innerHTML = '';
+            const medals = ['👑', '　✧', '　⋆'];
+            const rankLabels = ['命定', '次選', '緣淺'];
+
+            ranked.forEach((item, i) => {
+                const cd = characters[item.key];
+                const pct = maxScore > 0 ? Math.round((item.score / maxScore) * 100) : 0;
+                const div = document.createElement('div');
+                div.className = `rank-item rank-${i + 1} flex flex-col gap-2`;
+                div.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-base font-bold ${i === 0 ? 'text-red-300' : 'text-gray-400'}">
+                            ${medals[i]} ${cd.name}
+                            <span class="text-xs ml-2 opacity-70">${rankLabels[i]}</span>
+                        </span>
+                        <span class="text-sm font-mono ${i === 0 ? 'text-red-300' : 'text-gray-500'}">${item.score} 靈力</span>
+                    </div>
+                    <div class="rank-bar-bg">
+                        <div class="rank-bar-fill" data-pct="${pct}"></div>
+                    </div>`;
+                rankContainer.appendChild(div);
+            });
+
+            // 延遲觸發長條圖動畫
+            setTimeout(() => {
+                document.querySelectorAll('.rank-bar-fill').forEach(bar => {
+                    bar.style.width = bar.dataset.pct + '%';
+                });
+            }, 300);
+
+            // 靜默提交結果到 Google 表單
+            submitToGoogleForm(ranked);
+        }
+
+        // Google 表單靜默提交
+        function submitToGoogleForm(ranked) {
+            const FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdxlE1jI5eq7EjgyAm1JDfdWQq9gpHSJyQnJ0H_f8jRy1nT8g/formResponse';
+            const genderLabel = userGender === 'female' ? '女角色' : '男角色';
+
+            const data = new URLSearchParams({
+                'entry.1637334076': playerName,
+                'entry.1265850506': playTime,
+                'entry.1099662832': genderLabel,
+                'entry.1571639691': characters[ranked[0].key].name,
+                'entry.1501799079': ranked[0].score,
+                'entry.1783437987': characters[ranked[1].key].name,
+                'entry.439417346':  ranked[1].score,
+                'entry.557767399':  characters[ranked[2].key].name,
+                'entry.949464153':  ranked[2].score,
+            });
+
+            fetch(FORM_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: data
+            }).catch(() => {}); // 靜默忽略任何錯誤
+        }
+
+        // 重置測驗
+        function resetQuiz() {
+            currentQuestion = 0;
+            userGender = '';
+            playerName = '';
+            playTime = '';
+            scores = {
+                ji_jiayin: 0, liu_yao: 0, song_shiyi: 0,
+                jiang_fangye: 0, ji_yinluo: 0, chong_yi: 0
+            };
+
+            document.getElementById('input-name').value = '';
+            document.getElementById('register-error').classList.add('hidden');
+
+            const resultScreen = document.getElementById('screen-result');
+            const startScreen = document.getElementById('screen-start');
+            
+            resultScreen.classList.remove('fade-in');
+            resultScreen.classList.add('hidden');
+            
+            startScreen.classList.remove('hidden', 'fade-out');
+            startScreen.classList.add('fade-in');
+        }
+
+        // 建立背景漂浮灰燼特效
+        function createAshes() {
+            const container = document.getElementById('ashes-container');
+            for (let i = 0; i < 30; i++) {
+                let ash = document.createElement('div');
+                ash.classList.add('ash');
+                
+                // 隨機大小、位置、延遲
+                let size = Math.random() * 4 + 2;
+                let left = Math.random() * 100;
+                let duration = Math.random() * 10 + 5;
+                let delay = Math.random() * 5;
+
+                ash.style.width = `${size}px`;
+                ash.style.height = `${size}px`;
+                ash.style.left = `${left}vw`;
+                ash.style.animationDuration = `${duration}s`;
+                ash.style.animationDelay = `${delay}s`;
+
+                container.appendChild(ash);
+            }
+        }
+
+        window.onload = createAshes;
+    </script>
+</body>
+</html>
