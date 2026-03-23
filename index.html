@@ -185,8 +185,8 @@
             </div>
 
             <div class="flex flex-col md:flex-row gap-4 justify-center">
-                <button onclick="openGoogleForm()" class="px-8 py-3 bg-red-900 hover:bg-red-800 text-white border border-red-500 rounded tracking-widest transition-all duration-300 shadow-[0_0_15px_rgba(220,38,38,0.5)]">
-                    登錄結果至檔案庫
+                <button id="submit-btn" onclick="submitToGoogleSheet()" class="px-8 py-3 bg-red-900 hover:bg-red-800 text-white border border-red-500 rounded tracking-widest transition-all duration-300 shadow-[0_0_15px_rgba(220,38,38,0.5)]">
+                    送出答案
                 </button>
                 <button onclick="resetQuiz()" class="px-8 py-3 bg-transparent border border-red-600 text-red-500 hover:bg-red-900 hover:text-white rounded tracking-widest transition-all duration-300">
                     再次輪迴
@@ -505,37 +505,49 @@
                 });
             }, 300);
 
-            // 準備手動送出的 Google 表單預填網址
-            prepareGoogleFormUrl(ranked);
+            // 保存排行資料供提交使用
+            window.currentRanked = ranked;
         }
 
-        let currentFormUrl = '';
+        let isSubmitting = false;
 
-        // 準備手動送出的 Google 表單預填網址
-        function prepareGoogleFormUrl(ranked) {
-            const FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSckfabofhQ3hNnO47itNt96P0sepyq77g95sWELbIy1Q957QQ/viewform';
+        async function submitToGoogleSheet() {
+            if (isSubmitting || !window.currentRanked) return;
+            isSubmitting = true;
+
+            const btn = document.getElementById('submit-btn');
+            if (btn) btn.innerText = '傳送中...';
+
+            const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzCSP9WnNEhpQFgDEK8nOs53PeR0ps2mcmrS-mN6HzhsFPySVJfS6hXYYlkCNBWa3ugyg/exec';
             const genderLabel = userGender === 'female' ? '女角色' : '男角色';
 
-            const params = new URLSearchParams({
-                'usp': 'pp_url',
-                'entry.1594712998': playerName,
-                'entry.732220716': playTime,
-                'entry.237219137': genderLabel,
-                'entry.2040857416': characters[ranked[0].key].name,
-                'entry.1339701515': ranked[0].score,
-                'entry.861732011': characters[ranked[1].key].name,
-                'entry.1831143891': ranked[1].score,
-                'entry.95458321': characters[ranked[2].key].name,
-                'entry.1649041233': ranked[2].score,
-            });
+            const data = {
+                playerName: playerName,
+                playTime: playTime,
+                gender: genderLabel,
+                char1: characters[window.currentRanked[0].key].name,
+                score1: window.currentRanked[0].score,
+                char2: characters[window.currentRanked[1].key].name,
+                score2: window.currentRanked[1].score,
+                char3: characters[window.currentRanked[2].key].name,
+                score3: window.currentRanked[2].score,
+            };
 
-            currentFormUrl = `${FORM_URL}?${params.toString()}`;
-        }
-
-        // 開啟 Google 表單
-        function openGoogleForm() {
-            if (currentFormUrl) {
-                window.open(currentFormUrl, '_blank');
+            try {
+                // 使用 text/plain，100% 避開 CORS preflight 阻擋
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(data)
+                });
+                if (btn) {
+                    btn.innerText = '✅ 已成功登錄試算表';
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            } catch (err) {
+                console.error(err);
+                if (btn) btn.innerText = '⚠️ 送出失敗，請再試一次';
+                isSubmitting = false;
             }
         }
 
@@ -545,7 +557,14 @@
             userGender = '';
             playerName = '';
             playTime = '';
-            currentFormUrl = '';
+            window.currentRanked = null;
+            isSubmitting = false;
+
+            const btn = document.getElementById('submit-btn');
+            if (btn) {
+                btn.innerText = '送出答案';
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
             scores = {
                 ji_jiayin: 0, liu_yao: 0, song_shiyi: 0,
                 jiang_fangye: 0, ji_yinluo: 0, chong_yi: 0
