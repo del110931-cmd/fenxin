@@ -368,7 +368,7 @@
             startScreen.classList.add('fade-out');
             setTimeout(() => {
                 startScreen.classList.add('hidden');
-                registerScreen.classList.remove('hidden');
+                registerScreen.classList.remove('hidden', 'fade-out');
                 registerScreen.classList.add('fade-in');
                 document.getElementById('input-name').focus();
             }, 500);
@@ -394,7 +394,7 @@
             registerScreen.classList.add('fade-out');
             setTimeout(() => {
                 registerScreen.classList.add('hidden');
-                quizScreen.classList.remove('hidden');
+                quizScreen.classList.remove('hidden', 'fade-out');
                 quizScreen.classList.add('fade-in');
                 showQuestion();
             }, 500);
@@ -573,10 +573,18 @@
             document.getElementById('input-name').value = '';
             document.getElementById('register-error').classList.add('hidden');
 
+            const registerScreen = document.getElementById('screen-register');
+            const quizScreen = document.getElementById('screen-quiz');
             const resultScreen = document.getElementById('screen-result');
             const startScreen = document.getElementById('screen-start');
             
-            resultScreen.classList.remove('fade-in');
+            registerScreen.classList.remove('fade-in', 'fade-out');
+            registerScreen.classList.add('hidden');
+            
+            quizScreen.classList.remove('fade-in', 'fade-out');
+            quizScreen.classList.add('hidden');
+
+            resultScreen.classList.remove('fade-in', 'fade-out');
             resultScreen.classList.add('hidden');
             
             startScreen.classList.remove('hidden', 'fade-out');
